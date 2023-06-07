@@ -1,0 +1,18 @@
+# Track system uptime
+actions {
+    name: "Uptime"
+    description: "System Uptime Tracker"
+
+    # calculate system uptime every 10 seconds
+    every 10 seconds {
+        if ( /sys/uptime/enable > 0 ) {
+            ```
+            #!/bin/sh
+
+            uptime >> /tmp/uptime.txt
+            ```
+
+            /metrics/uptime/count++;
+        }
+    }
+}

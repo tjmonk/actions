@@ -1,0 +1,36 @@
+# Test Action Script
+#
+actions {
+
+    name: "Test actions"
+    description: "Demonstrate Action Scripts"
+
+    # do these actions every 5 seconds
+    every 1 seconds {
+
+        /sys/test/b++;
+
+    }
+
+    on calc /sys/test/c {
+        int b;
+        string msg;
+
+        b = /sys/test/b;
+        msg = "The counter is at " + (string "%d")b + " counts.";
+        if ( b > /sys/test/limit )
+        {
+            msg += " Warning High Value!";
+        }
+
+        /sys/test/c = msg;
+    }
+
+    on change /sys/test/a {
+        short mask;
+
+        mask = ( 0x0F << 4 ) | ( 1u << 3 ) | ( 1u << 2 ) | (1u << 1 );
+
+        /sys/test/limit = /sys/test/a & mask;
+    }
+}

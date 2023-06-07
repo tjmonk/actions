@@ -1,0 +1,20 @@
+# Actions script containing multiple triggers
+actions {
+    name: "Example1"
+    description: "Composite action script"
+
+    # increment /sys/test/b every second
+    every 1 seconds {
+        /sys/test/b++;
+    }
+
+    # count the number of times /sys/test/a is changed
+    on change /sys/test/a {
+        /metrics/a/count++;
+    }
+
+    # update /sys/test/i every time it is requested
+    on calc /sys/test/i {
+        /sys/test/i++;
+    }
+}

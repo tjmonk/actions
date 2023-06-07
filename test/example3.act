@@ -1,0 +1,28 @@
+# Measure analog voltages
+actions {
+    name: "AIN"
+    description: "Measure Analog Inputs"
+
+    on change /HW/ADS7830/A1
+    {
+        float v;
+        int counts;
+        string out;
+        float vref;
+
+        # set reference voltage
+        vref = 3.3;
+
+        # get analog input counts from ADS7830 channel A1
+        counts = /HW/ADS7830/A1;
+
+        # convert the counts into volts
+        v = ((float)counts / 4096.0 ) * vref;
+
+        # generate the output message
+        out = "Ch 1: " + (string "%0.2f")v;
+
+        # write the output
+        /sys/test/c = out;
+    }
+}
