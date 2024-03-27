@@ -152,9 +152,10 @@ int main(int argC, char *argV[])
              * actions handler self-terminates */
 
             /* close the variable server */
-            VARSERVER_Close( pActions->hVarServer );
-            pActions->hVarServer = NULL;
-
+            if ( VARSERVER_Close( pActions->hVarServer ) == EOK )
+            {
+                pActions->hVarServer = NULL;
+            }
 
             if ( pActions->filename != NULL )
             {
@@ -162,6 +163,9 @@ int main(int argC, char *argV[])
                 pActions->filename = NULL;
             }
         }
+
+        free( pActions );
+        pActions = NULL;
     }
 
     return 0;
@@ -352,8 +356,10 @@ static void TerminationHandler( int signum, siginfo_t *info, void *ptr )
     {
         if ( pActions->hVarServer != NULL )
         {
-            VARSERVER_Close( pActions->hVarServer );
-            pActions->hVarServer = NULL;
+            if ( VARSERVER_Close( pActions->hVarServer ) == EOK )
+            {
+                pActions->hVarServer = NULL;
+            }
         }
 
         if( pActions->filename != NULL )
