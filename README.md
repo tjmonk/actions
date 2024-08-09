@@ -57,8 +57,9 @@ actions {
 
 The actions directive can contain a list of action triggers.
 
-Three types of action triggers are supported:
+Four types of action triggers are supported:
 
+- initialization events
 - timer events
 - variable CALC requests
 - variable MODIFIED notifications
@@ -168,6 +169,44 @@ actions {
     }
 }
 
+```
+
+### Initialization events
+
+Initialization events trigger one-time action processing occur when the actions
+engine is started.  This provides a convenient mechanism to set up preconditions
+for the runtime actions.
+
+An initialization event declaration looks like this:
+
+```
+on init {
+    < code block >
+}
+```
+
+A simple initialization action to clear the /sys/test/a varserver variable
+would look like this:
+
+```
+on init {
+    /sys/test/a = 0;
+}
+```
+
+Other action triggers can also be forced to run during the action initialization
+phase by including the "init" declaration in conjunction with the other
+action declaration types.  The order of the action types is not important.
+
+For example:
+
+```
+on calc init <trigger list> {}
+on init calc <trigger list> {}
+on init change <trigger list> {}
+on change init <trigger list> {}
+every init <timespec> {}
+init every <timespec> {}
 ```
 
 ### Trigger lists

@@ -47,6 +47,9 @@ SOFTWARE.
 /*! calculation notification */
 #define CALC_NOTIFICATION SIGRTMIN+7
 
+/*! no notification */
+#define NO_NOTIFICATION 0
+
 /*! local variable declaration */
 typedef struct _declaration
 {
@@ -88,6 +91,9 @@ typedef struct _action
 
     /*! pointer to the system variable declarations for the action */
     Variable *pSysVars;
+
+    /*! flag to indicate action should be processed on initialization */
+    bool init;
 
     /*! signal type associated with this action */
     int signal;

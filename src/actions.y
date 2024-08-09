@@ -76,9 +76,17 @@ static bool errorFlag = false;
        Function definitions
 ==============================================================================*/
 
-static void *OnCalc( void *signals, void *declarations, void *statements );
-static void *OnChange( void *signals, void *declarations, void *statements );
-static void *Every( void *interval,
+static void *OnInit( void *declarations, void *statements );
+static void *OnCalc( bool init,
+                     void *signals,
+                     void *declarations,
+                     void *statements );
+static void *OnChange( bool init,
+                       void *signals,
+                       void *declarations,
+                       void *statements );
+static void *Every( bool init,
+                    void *interval,
                     void *timespan,
                     void *declaration_list,
                     void *statement_list );
@@ -96,6 +104,7 @@ static void *NewSignal( void *variable );
 %token ON
 %token CHANGE
 %token CALC
+%token INIT
 %token MS
 %token SECONDS
 %token MINUTES
@@ -198,17 +207,45 @@ action_list
         ;
 
 action
-        :   ON CALC signal_list LBRACE declaration_list statement_list RBRACE
+        :   ON INIT LBRACE declaration_list statement_list RBRACE
             {
-                $$ = OnCalc( $3, $5, $6 );
+                $$ = OnInit( $4, $5 );
+            }
+        |   ON CALC signal_list LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = OnCalc( false, $3, $5, $6 );
+            }
+        |   ON CALC INIT signal_list LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = OnCalc( true, $4, $6, $7 );
+            }
+        |   ON INIT CALC signal_list LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = OnCalc( true, $4, $6, $7 );
             }
         |   ON CHANGE signal_list LBRACE declaration_list statement_list RBRACE
             {
-                $$ = OnChange( $3, $5, $6 );
+                $$ = OnChange( false, $3, $5, $6 );
+            }
+        |   ON CHANGE INIT signal_list LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = OnChange( true, $4, $6, $7 );
+            }
+        |   ON INIT CHANGE signal_list LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = OnChange( true, $4, $6, $7 );
             }
         |   EVERY number timespan LBRACE declaration_list statement_list RBRACE
             {
-                $$ = Every( $2, $3, $5, $6 );
+                $$ = Every( false, $2, $3, $5, $6 );
+            }
+        |   INIT EVERY number timespan LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = Every( false, $3, $4, $6, $7 );
+            }
+        |   EVERY INIT number timespan LBRACE declaration_list statement_list RBRACE
+            {
+                $$ = Every( false, $3, $4, $6, $7 );
             }
         ;
 
@@ -705,6 +742,10 @@ void yyerror( char *err )
     The OnChange function creates an OnChange Action
 
 @param[in]
+    init
+        boolean flag indicating if the actions should run on initialization
+
+@param[in]
     signals
         pointer to a list of signals to watch for
 
@@ -720,7 +761,10 @@ void yyerror( char *err )
 @retval NULL if an error occurred
 
 ==============================================================================*/
-static void *OnChange( void *signals, void *declarations, void *statements )
+static void *OnChange( bool init,
+                       void *signals,
+                       void *declarations,
+                       void *statements )
 {
     Signal *pSignal;
     int result;
@@ -729,12 +773,55 @@ static void *OnChange( void *signals, void *declarations, void *statements )
     pAction = (Action *)calloc( 1, sizeof( Action ) );
     if ( pAction != NULL )
     {
+        pAction->init = init;
         pAction->pSignals = (Signal *)signals;
         pAction->pDeclarations = (Variable *)declarations;
         pAction->pStatements = (Statement *)statements;
         pAction->signal = VAR_NOTIFICATION;
 
         RequestModifiedSignals( pAction->pSignals );
+    }
+
+    /* clear the global declaration list */
+    SetDeclarations( NULL );
+
+    return (void *)pAction;
+}
+
+/*============================================================================*/
+/*  OnInit                                                                    */
+/*!
+    Create an OnInit action
+
+    The OnInit function creates an OnInit Action which will be processed
+    on startup
+
+@param[in]
+    declarations
+        pointer to a list of variable declarations for this action
+
+@param[in]
+    statements
+        pointer to the list of statements to execute for this action
+
+@retval pointer to the Action that we created
+@retval NULL if an error occurred
+
+==============================================================================*/
+static void *OnInit( void *declarations, void *statements )
+{
+    Signal *pSignal;
+    int result;
+    Action *pAction;
+
+    pAction = (Action *)calloc( 1, sizeof( Action ) );
+    if ( pAction != NULL )
+    {
+        pAction->init = true;
+        pAction->pSignals = NULL;
+        pAction->signal = NO_NOTIFICATION;
+        pAction->pDeclarations = (Variable *)declarations;
+        pAction->pStatements = (Statement *)statements;
     }
 
     /* clear the global declaration list */
@@ -751,6 +838,10 @@ static void *OnChange( void *signals, void *declarations, void *statements )
     The OnCalc function creates an OnCalc Action
 
 @param[in]
+    init
+        boolean flag indicating if the actions should run on initialization
+
+@param[in]
     signals
         pointer to a list of signals to watch for
 
@@ -766,7 +857,10 @@ static void *OnChange( void *signals, void *declarations, void *statements )
 @retval NULL if an error occurred
 
 ==============================================================================*/
-static void *OnCalc( void *signals, void *declarations, void *statements )
+static void *OnCalc( bool init,
+                     void *signals,
+                     void *declarations,
+                     void *statements )
 {
     Signal *pSignal;
     int result;
@@ -775,13 +869,13 @@ static void *OnCalc( void *signals, void *declarations, void *statements )
     pAction = (Action *)calloc( 1, sizeof( Action ) );
     if ( pAction != NULL )
     {
+        pAction->init = init;
         pAction->pSignals = (Signal *)signals;
         pAction->signal = CALC_NOTIFICATION;
         pAction->pDeclarations = (Variable *)declarations;
         pAction->pStatements = (Statement *)statements;
 
         RequestCalcSignals( pAction->pSignals );
-
     }
 
     /* clear the global declaration list */
@@ -797,6 +891,10 @@ static void *OnCalc( void *signals, void *declarations, void *statements )
 
     The Every function creates a new actions group which runs at the
     specified schedule
+
+@param[in]
+    init
+        boolean flag indicating if the actions should run on initialization
 
 @param[in]
     interval
@@ -818,7 +916,8 @@ static void *OnCalc( void *signals, void *declarations, void *statements )
 @retval NULL if an error occurred
 
 ==============================================================================*/
-static void *Every( void *interval,
+static void *Every( bool init,
+                    void *interval,
                     void *timescale,
                     void *declaration_list,
                     void *statement_list )
@@ -831,6 +930,7 @@ static void *Every( void *interval,
     pAction = (Action *)calloc( 1, sizeof( Action ) );
     if ( pAction != NULL )
     {
+        pAction->init = init;
         pAction->pDeclarations = declaration_list;
         pAction->pStatements = statement_list;
         pAction->signal = TIMER_NOTIFICATION;

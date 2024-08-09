@@ -3,18 +3,25 @@ actions {
     name: "Example1"
     description: "Composite action script"
 
+    # perform initialization
+    on init {
+        /sys/test/b = 10;
+        /sys/test/i = 0;
+        /metrics/a/count = 0;
+    }
+
     # increment /sys/test/b every second
     every 1 seconds {
         /sys/test/b++;
     }
 
     # count the number of times /sys/test/a is changed
-    on change /sys/test/a {
+    on init change /sys/test/a {
         /metrics/a/count++;
     }
 
     # update /sys/test/i every time it is requested
-    on calc /sys/test/i {
+    on calc init /sys/test/i {
         /sys/test/i++;
     }
 }

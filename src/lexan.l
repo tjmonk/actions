@@ -56,6 +56,7 @@ every "every"
 on "on"
 calc "calc"
 change "change"
+init "init"
 
 float "float"
 int "int"
@@ -135,6 +136,7 @@ floatnum  [-+]?[0-9]*\.[0-9]+([eE][-+]?[0-9]+)?
 {every} return(EVERY);
 {on} return(ON);
 {change} return(CHANGE);
+{init} return(INIT);
 {calc} return(CALC);
 
 {ms} return(MS);

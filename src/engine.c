@@ -74,6 +74,7 @@ SOFTWARE.
 static int waitSignal( int *signum, int *id );
 static int HandleSignal( Actions *pActions, int signum, int id );
 static int ProcessAction( Actions *pActions, Action *pAction );
+static int RunInitActions( Actions *pActions );
 
 /*==============================================================================
        Definitions
@@ -108,6 +109,9 @@ int RunActions( Actions *pActions )
 
     if ( pActions != NULL )
     {
+        /* Run the initial actions */
+        (void)RunInitActions( pActions );
+
         /* run the actions processor forever */
         while( true )
         {
@@ -192,6 +196,54 @@ static int waitSignal( int *signum, int *id )
 
         /* indicate success */
         result = EOK;
+    }
+
+    return result;
+}
+
+/*============================================================================*/
+/*  RunInitActions                                                            */
+/*!
+    Run the Init Actions processors
+
+    The RunInitActions function iterates through all of the actions
+    and runs any that have the init flag set.
+
+@param[in]
+    pActions
+        Pointer to the Actions to execute
+
+@retval EOK the actions completed normally
+@retval EINVAL invalid arguments
+@retval other actions error
+
+==============================================================================*/
+static int RunInitActions( Actions *pActions )
+{
+    int result = EINVAL;
+    int rc;
+    Action *pAction;
+
+    if ( pActions != NULL )
+    {
+        result = EOK;
+
+        pAction = pActions->pActionList;
+        while ( pAction != NULL )
+        {
+            if ( pAction->init == true )
+            {
+                /* perform action processing */
+                rc = ProcessAction( pActions, pAction );
+                if ( rc != EOK )
+                {
+                    result = rc;
+                }
+            }
+
+            pAction = pAction->pNext;
+        }
+
     }
 
     return result;
